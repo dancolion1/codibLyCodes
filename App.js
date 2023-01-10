@@ -1,209 +1,295 @@
-import React, { useState, useEffect } from 'react';
-import './App.css';
-import { forwardRef } from 'react';
-import Avatar from 'react-avatar';
-import Grid from '@mui/material/Grid'
+import axios from "axios";
+import { useState, useEffect } from "react";
 
-import MaterialTable from "@mui/material/Table";
-import AddBox from '@mui/icons-material/AddBox';
-import ArrowDownward from '@mui/icons-material/ArrowDownward';
-import Check from '@mui/icons-material/Check';
-import ChevronLeft from '@mui/icons-material/ChevronLeft';
-import ChevronRight from '@mui/icons-material/ChevronRight';
-import Clear from '@mui/icons-material/Clear';
-import DeleteOutline from '@mui/icons-material/DeleteOutline';
-import Edit from '@mui/icons-material/Edit';
-import FilterList from '@mui/icons-material/FilterList';
-import FirstPage from '@mui/icons-material/FirstPage';
-import LastPage from '@mui/icons-material/LastPage';
-import Remove from '@mui/icons-material/Remove';
-import SaveAlt from '@mui/icons-material/SaveAlt';
-import Search from '@mui/icons-material/Search';
-import ViewColumn from '@mui/icons-material/ViewColumn';
-import axios from 'axios'
-import Alert from '@mui/material/Alert';
+import BootstrapTable from "react-bootstrap-table-next";
+import paginationFactory from "react-bootstrap-table2-paginator";
+import cellEditFactory from "react-bootstrap-table2-editor";
+import filterFactory, { numberFilter } from "react-bootstrap-table2-filter";
 
-const tableIcons = {
-  Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
-  Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
-  Clear: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
-  Delete: forwardRef((props, ref) => <DeleteOutline {...props} ref={ref} />),
-  DetailPanel: forwardRef((props, ref) => <ChevronRight {...props} ref={ref} />),
-  Edit: forwardRef((props, ref) => <Edit {...props} ref={ref} />),
-  Export: forwardRef((props, ref) => <SaveAlt {...props} ref={ref} />),
-  Filter: forwardRef((props, ref) => <FilterList {...props} ref={ref} />),
-  FirstPage: forwardRef((props, ref) => <FirstPage {...props} ref={ref} />),
-  LastPage: forwardRef((props, ref) => <LastPage {...props} ref={ref} />),
-  NextPage: forwardRef((props, ref) => <ChevronRight {...props} ref={ref} />),
-  PreviousPage: forwardRef((props, ref) => <ChevronLeft {...props} ref={ref} />),
-  ResetSearch: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
-  Search: forwardRef((props, ref) => <Search {...props} ref={ref} />),
-  SortArrow: forwardRef((props, ref) => <ArrowDownward {...props} ref={ref} />),
-  ThirdStateCheck: forwardRef((props, ref) => <Remove {...props} ref={ref} />),
-  ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />)
-};
-
-const api = axios.create({
-  baseURL: `https://reqres.in/api`
-})
-
-
-
-
+import styled from "styled-components";
 function App() {
+  const [data, setData] = useState([]);
+  const [loaded, setLoaded] = useState(false)
+  const [shouldshow, setShouldshow] = useState(false);
+ 
+  useEffect(() => {
+    getData();
+  }, []);
 
-  var columns = [
-    {title: "id", field: "id", hidden: true},
-    {title: "Avatar", render: rowData => <Avatar maxInitials={1} size={40} round={true} name={rowData === undefined ? " " : rowData.first_name} />  },
-    {title: "name", field: "name"},
-    {title: "year", field: "year"}
-    
-  ]
-  const [data, setData] = useState([]); //table data
+  const getData = () => {
 
-  //for error handling
-  const [iserror, setIserror] = useState(false)
-  const [errorMessages, setErrorMessages] = useState([])
+ 
+    try {
+      axios("https://reqres.in/api/products").then((res) => {
+      console.log(res.data.data);
+      setData(res.data.data);
+      setLoaded(true)
+    });
+    }  catch (e) {
+      console.log(e.message)
+      setLoaded(false)
+      
+  }
 
-  useEffect(() => { 
-    api.get("/products")
-        .then(res => {               
-            setData(res.data.data)
-         })
-         .catch(error=>{
-             console.log("Error")
-         })
-  }, [])
+ 
+  
+  }; 
+  
+  
+ 
+  
 
-  const handleRowUpdate = (newData, oldData, resolve) => {
-    //validation
-    let errorList = []
-    if(newData.name === ""){
-      errorList.push("name")
-    }
-    if(newData.year === ""){
-      errorList.push("year")
-    }
-    
-    if(errorList.length < 1){
-      api.patch("/products/"+newData.id, newData)
-      .then(res => {
-        const dataUpdate = [...data];
-        const index = oldData.tableData.id;
-        dataUpdate[index] = newData;
-        setData([...dataUpdate]);
-        resolve()
-        setIserror(false)
-        setErrorMessages([])
-      })
-      .catch(error => {
-        setErrorMessages(["Update failed! Server error"])
-        setIserror(true)
-        resolve()
+  const selectRow = {
+    mode: "checkbox",
+    clickToSelect: true,
+    selected: [1, 3],
+    clickToEdit: true,
+  };
+  const columns = [
+    { 
+      dataField: "id",
+      text: "Product ID",
+      filter: numberFilter({
+        placeholder: "Enter Product Id",
+        delay:500,
+        withoutEmptyComparatorOption: true,
+        withoutEmptyNumberOption: true,
+        comparatorStyle: {
+          display: "none"
+        },
+   
         
-      })
-    }else{
-      setErrorMessages(errorList)
-      setIserror(true)
-      resolve()
+      }),
 
+      sort: true,
+      validator: (newValue, row, column) => {
+        if (isNaN(newValue)) {
+          return {
+            valid: false,
+            message: "Please enter numeric value",
+          };
+        }
+        return true;
+      },
+    },
+   
+    {
+      dataField: "name",
+      text: "Name",
+      sort: true,
+      editable: false,
+    },
+    {
+      dataField: "year",
+      text: "Year",
+      sort: true,
+      editable: false,
     }
     
-  }
+  ];
 
-  const handleRowAdd = (newData, resolve) => {
-    //validation
-    let errorList = []
-    if(newData.name === undefined){
-      errorList.push("name")
+  const options = {
+    page: 1,
+    sizePerPage: 5,
+    nextPageText: '>',
+    prePageText: '<',
+    showTotal: true
+  };
+
+
+  const rowEvents = {
+    onClick: (e, row, rowIndex) => {
+      setShouldshow(true)
     }
-    if(newData.year === undefined){
-      errorList.push("year")
-    }
-    
-    if(errorList.length < 1){ //no error
-      api.post("/products", newData)
-      .then(res => {
-        let dataToAdd = [...data];
-        dataToAdd.push(newData);
-        setData(dataToAdd);
-        resolve()
-        setErrorMessages([])
-        setIserror(false)
-      })
-      .catch(error => {
-        setErrorMessages(["Cannot add data. Server error!"])
-        setIserror(true)
-        resolve()
-      })
-    }else{
-      setErrorMessages(errorList)
-      setIserror(true)
-      resolve()
-    }
+  };
 
-    
-  }
-
-  const handleRowDelete = (oldData, resolve) => {
-    
-    api.delete("/products/"+oldData.id)
-      .then(res => {
-        const dataDelete = [...data];
-        const index = oldData.tableData.id;
-        dataDelete.splice(index, 1);
-        setData([...dataDelete]);
-        resolve()
-      })
-      .catch(error => {
-        setErrorMessages(["Delete failed! Server error"])
-        setIserror(true)
-        resolve()
-      })
-  }
-
+  const rowStyle = (row, rowIndex) => {
+    return { 
+      backgroundColor: loaded ? data[0].color : "white",
+      
+  };
+  };
 
   return (
-    <div className="App">
-      
-      <Grid container spacing={1}>
-          <Grid item xs={3}></Grid>
-          <Grid item xs={6}>
-          <div>
-            {iserror && 
-              <Alert severity="error">
-                  {errorMessages.map((msg, i) => {
-                      return <div key={i}>{msg}</div>
-                  })}
-              </Alert>
-            }       
-          </div>
-            <MaterialTable
-              title="products data from remote source"
-              columns={columns}
-              data={data}
-              icons={tableIcons}
-              editable={{
-                onRowUpdate: (newData, oldData) =>
-                  new Promise((resolve) => {
-                      handleRowUpdate(newData, oldData, resolve);
-                      
-                  }),
-                onRowAdd: (newData) =>
-                  new Promise((resolve) => {
-                    handleRowAdd(newData, resolve)
-                  }),
-                onRowDelete: (oldData) =>
-                  new Promise((resolve) => {
-                    handleRowDelete(oldData, resolve)
-                  }),
-              }}
-            />
-          </Grid>
-          <Grid item xs={3}></Grid>
-        </Grid>
+    <>
+
+
+{ shouldshow && (
+        <ModalBackground onClick={() => setShouldshow(false)}>
+            <ModalBody onClick={(e) => e.stopPropagation()}>
+                
+            <WhiteFlexColumnRoot> 
+      <FlexColumns>
+      <RoyalPurpleText onClick={() => setShouldshow(false)}>X</RoyalPurpleText>
+      <div style={{overflowX: "auto"}} > 
+<table  style={{width:"100%"}} >    
+     <tr style={{height:"25px", backgroundColor: "#e5e5e5"}}>
+         {/* <th style={{width:"4%"}}></th>  */}
+         <th style={{width:"11.8%"}}> Id</th>
+         <th style={{width:"18%"}}>Name</th> 
+         <th style={{width:"17%"}}>Year</th>
+         <th style={{width:"14%"}}>Color</th>
+         <th style={{width:"21%"}}>Pantone value</th>
+         
+     </tr> 
+
+
+     {  loaded ? data.map((modaldata) => {
+        return (
+     <tr key={modaldata.id} style={{height:"45px"}}> 
+        
+        
+         <td><Text3>{modaldata.id}</Text3></td>
+         <td><Text3>{modaldata.name}</Text3></td>
+         <td><Text3>{modaldata.year}</Text3></td>
+         <td><Text3>{modaldata.color}</Text3></td>  
+         <td><Text3>{modaldata.pantone_value}</Text3></td>  
+     </tr>
+    
+    );})   :  ( <div className="pos-center" >
+    <div className="loader"></div> 
+   </div>
+) 
+    }   
+  
+  
+     
+ </table>
+</div>
+
+      </FlexColumns>
+    </WhiteFlexColumnRoot>
+
+    
+            </ModalBody>
+        </ModalBackground>
+      )}
+
+    {loaded ? (
+     <p style={{ color: "blue", display: "flex", justifyContent: "center"}}>Data Retrieved Successfully </p>
+     ):<p style={{ color: "red", display: "flex", justifyContent: "center"}}> Error retrieving Data from server </p>
+    }
+
+    <div className="App" style={{ marginLeft: "20px", marginRight: "20px" }} >
+    
+      <BootstrapTable 
+     
+        keyField="id"
+        data={data}
+        columns={columns}
+        rowEvents={ rowEvents }
+        rowStyle={ rowStyle }
+        hover
+        
+        condensed
+        pagination={paginationFactory(options)}
+        cellEdit={cellEditFactory({
+          mode: "dbclick",
+          blurToSave: true,
+          nonEditableRows: () => [1, 2, 3],
+        })}
+        selectRow={selectRow}
+        filter={filterFactory()}
+      />
     </div>
+    </>
   );
 }
 
-export default App;
+
+
+
+
+const sizes = {
+  mobileS: "320px",
+  mobileM: "375px",
+  mobileL: "425px",
+  tablet: "768px",
+  laptop: "1024px",
+  laptopL: "1440px",
+  desktop: "2560px",
+};
+export const devices = {
+  mobileS: `(min-width: ${sizes.mobileS})`,
+  mobileM: `(min-width: ${sizes.mobileM})`,
+  mobileL: `(max-width: ${sizes.mobileL})`,
+  tablet: `(max-width: ${sizes.tablet})`,
+  laptop: `(min-width: ${sizes.laptop})`,
+  laptopL: `(min-width: ${sizes.laptopL})`,
+  desktop: `(min-width: ${sizes.desktop})`,
+};
+
+
+
+
+const ModalBackground = styled.div`
+   position:fixed;
+   z-index: 1;
+   left: 0;
+   top: 0;
+   width: 100%;
+   height: 100%;
+   overflow: auto;
+   background-color: rgba(0,0,0,0.5);
+`
+
+const ModalBody = styled.div`
+   background-color: white;
+   margin: 10% auto;
+   padding: 20px; 
+   width: 50%;
+   @media ${devices.tablet} {
+      width: 100%;   
+    } 
+    @media ${devices.mobileL} { 
+      width: 100%;
+    } 
+`
+const WhiteFlexColumnRoot = styled.div`
+height: 390px;
+background-color: #ffffff;
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+border-radius: 6px;
+padding: 0px 40px 0px 43px;
+`;
+const FlexColumns = styled.div`
+height: 273px;
+display: flex;
+flex-direction: column;
+]
+`;
+
+
+
+const Text3 = styled.div`
+  mix-blend-mode: normal;
+  font-size: 17px;
+  font-family: Roboto;
+  line-height: 21px;
+  color: #787878;
+  text-align: left;
+ 
+`;
+
+const RoyalPurpleText = styled.div`
+  display: flex;
+  font-size: 14px;
+  font-family: Roboto;
+  line-height: 21px;
+  color: #ffffff;
+  width: 50px;
+  height: 45px;
+  background-color: #2d0353;
+  flex-direction: row;
+  justify-content: center;
+  border-radius: 6px;
+  padding: 4px 0px 4px 0px;
+  cursor: pointer;
+`;
+
+  
+
+export default App; 
